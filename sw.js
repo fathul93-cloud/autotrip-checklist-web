@@ -1,6 +1,6 @@
 // Dibuat tools/web_rilis.py. Versi = hash isi semua berkas; berubah setiap rilis.
 'use strict';
-const VERSI = 'bff7ad3d16bbbda1';
+const VERSI = 'c7aa3a6252d78a66';
 const CACHE = 'autotrip-' + VERSI;
 const BERKAS = [
 "./",
@@ -59,6 +59,8 @@ self.addEventListener('fetch', (e) => {
   if (r.method !== 'GET') return;
   const url = new URL(r.url);
   if (url.origin !== self.location.origin) return;
+  // Logo usaha selalu dari jaringan (diperiksa dengan hash di aplikasi; offline: logo tersimpan di aplikasi).
+  if (url.pathname.includes('/logo/')) return;
   if (r.mode === 'navigate') {
     // Halaman selalu dari cache (offline); bagian # (link surat) tetap di browser.
     e.respondWith(caches.match('./', { cacheName: CACHE }).then((m) => m || fetch(r)));
