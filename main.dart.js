@@ -133799,7 +133799,7 @@ if(b4==null)b4=a6
 b5=b0.e
 a5=b5?a5.b:null
 b5=b5?b0.x:null
-e=new A.avE("web",a8,a5,b5,i,a9,a1,b0,b1,b2,b3,b4,a6,"2.0.26")
+e=new A.avE("web",a8,a5,b5,i,a9,a1,b0,b1,b2,b3,b4,a6,"2.0.27")
 d=new A.b_O(g)
 s=7
 return A.j(A.TP(new A.b_Q(g),d,e,j.x),$async$wV)
@@ -135026,7 +135026,7 @@ $1(a){return a.length!==0},
 $S:21}
 A.nb.prototype={
 p6(){var s=this.f
-return s==null?this.f=A.z8(this.aez("2.0.26")):s},
+return s==null?this.f=A.z8(this.aez("2.0.27")):s},
 aez(a){var s=this,r=B.e.dc("Surat Sewa "+a),q=s.e.hp()
 r=A.b([r,"Waktu: "+q,"Sumber: "+s.c,"Error: "+A.n(s.a)],t.s)
 q=s.b
@@ -135050,7 +135050,7 @@ q=s.d
 p=s.e
 o=s.f
 n=s.r
-m=r.aez("2.0.26")
+m=r.aez("2.0.27")
 s=A.kj(e,e,e,e,A.a3(q,e,e,e,e,e,e))
 l=t.p
 k=A.b([A.lX(A.bu(A.bfn(),e,e,e),A.a3("Salin error",e,e,e,e,e,e),new A.aUj(a,m),e)],l)
