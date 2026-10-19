@@ -1,6 +1,6 @@
 // Dibuat tools/web_rilis.py. Versi = hash isi semua berkas; berubah setiap rilis.
 'use strict';
-const VERSI = '30ba8aaf79100dc0';
+const VERSI = 'd6afed4db6be5d16';
 const CACHE = 'autotrip-' + VERSI;
 const BERKAS = [
 "./",
