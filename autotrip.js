@@ -117,9 +117,38 @@
   let stream = null;
   let video = null;
   let wadah = null;
+  // Sesi kamera: layar lama yang ditutup (dispose) tidak boleh mematikan kamera layar baru (v2.0.23).
+  let sesi = 0;
+  // Penghitung frame video yang benar-benar tampil; tidak bertambah = gambar membeku.
+  let frameKe = 0;
+
+  function putar() {
+    if (video && stream && stream.active) video.play().catch(() => { /* dicoba lagi oleh pemeriksa beku */ });
+  }
 
   function pasangVideo() {
-    if (wadah && video && video.parentNode !== wadah) wadah.appendChild(video);
+    if (wadah && video && video.parentNode !== wadah) {
+      wadah.appendChild(video);
+      // Elemen media yang dipindah antar-wadah DOM dijeda browser: putar lagi.
+      putar();
+    }
+  }
+
+  function hitungFrame(v) {
+    if (typeof v.requestVideoFrameCallback === 'function') {
+      const langkah = () => {
+        if (video !== v) return;
+        frameKe++;
+        v.requestVideoFrameCallback(langkah);
+      };
+      v.requestVideoFrameCallback(langkah);
+    } else {
+      let waktu = -1;
+      const t = setInterval(() => {
+        if (video !== v) return clearInterval(t);
+        if (v.currentTime !== waktu) { waktu = v.currentTime; frameKe++; }
+      }, 250);
+    }
   }
 
   at.wadahKamera = function (div) {
@@ -132,6 +161,7 @@
 
   at.kameraBuka = async function (audio, lebarIdeal, tinggiIdeal) {
     at.kameraTutup();
+    const ini = ++sesi;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Browser ini tidak mendukung kamera (buka lewat https di Safari/Chrome terbaru)');
     }
@@ -139,6 +169,12 @@
       audio: !!audio,
       video: { facingMode: { ideal: 'environment' }, width: { ideal: lebarIdeal }, height: { ideal: tinggiIdeal } },
     });
+    if (ini !== sesi) {
+      // Layar ditutup selama menunggu izin/kamera.
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+      throw new Error('Kamera ditutup');
+    }
     video = document.createElement('video');
     video.setAttribute('playsinline', '');
     video.setAttribute('autoplay', '');
@@ -148,16 +184,28 @@
     video.style.objectFit = 'fill';
     video.style.pointerEvents = 'none';
     video.srcObject = stream;
+    const v = video;
+    // Browser bisa menjeda video (dipindah di DOM, tab di latar): selama kamera aktif, putar lagi.
+    v.addEventListener('pause', () => { if (video === v) setTimeout(putar, 50); });
+    frameKe = 0;
+    hitungFrame(v);
     pasangVideo();
     await new Promise((ok, gagal) => {
       const t = setTimeout(() => gagal(new Error('Kamera tidak merespons')), 15000);
       video.onloadedmetadata = () => { clearTimeout(t); ok(); };
     });
     try { await video.play(); } catch (e) { /* autoplay muted biasanya boleh */ }
-    return { lebar: video.videoWidth, tinggi: video.videoHeight };
+    return { lebar: video.videoWidth, tinggi: video.videoHeight, sesi: ini };
   };
 
-  at.kameraTutup = function () {
+  // Jumlah frame yang sudah tampil (untuk mendeteksi gambar membeku) dan memutar ulang video.
+  at.kameraFrame = function () { return frameKe; };
+  at.kameraSegarkan = function () { putar(); };
+
+  // [s] = sesi dari kameraBuka; sesi lama (layar yang sudah diganti) tidak menutup kamera yang sedang dipakai.
+  at.kameraTutup = function (s) {
+    if (typeof s === 'number' && s !== sesi) return;
+    sesi++;
     if (rekaman && rekaman.state !== 'inactive') {
       try { rekaman.stop(); } catch (e) { /* abaikan */ }
     }
@@ -165,10 +213,15 @@
     if (stream) stream.getTracks().forEach((t) => t.stop());
     stream = null;
     if (video) {
+      try { video.pause(); } catch (e) { /* abaikan */ }
       video.srcObject = null;
+      video.removeAttribute('src');
+      try { video.load(); } catch (e) { /* abaikan */ }
       if (video.parentNode) video.parentNode.removeChild(video);
     }
     video = null;
+    // Pemindai QR dibuat ulang saat kamera dibuka lagi.
+    detektor = undefined;
   };
 
   at.kameraBisaSenter = function () {
